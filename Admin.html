@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - View Orders</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>📋 Orders Dashboard (Admin)</h2>
+  <div id="ordersList">Loading orders...</div>
+  Status:
+<select onchange="updateStatus('${key}', this.value)">
+  <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+  <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
+  <option value="On the way" ${order.status === 'On the way' ? 'selected' : ''}>On the way</option>
+  <option value="Delivered" ${order.status === 'Delivered' ? 'selected' : ''}>Delivered</option>
+</select>;
+
+  <button onclick="logout()">Logout</button>
+
+  <script>
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        alert("Login required.");
+        window.location.href = "login.html";
+        return;
+      }
+
+      const adminEmail = "hexpeetols@gmail.com";  // 🔁 
+      if (user.email !== adminEmail) {
+        alert("Access denied. Admins only.");
+        firebase.auth().signOut();
+        window.location.href = "login.html";
+        return;
+      }
+      const ordersRef = firebase.database().ref("orders")
+      ordersRef.on("value", function(snapshot) {
+        const data = snapshot.val();
+        let html = "";
+        if (data) {
+          Object.entries(data).forEach(([key, order]) => {
+            html += `
+              <div style="border:1px solid #ccc; padding:10px; margin:10px;">
+                <strong>${order.foodItem}</strong> x${order.quantity} <br>
+                By: ${order.email} <br>
+                Address: ${order.address} <br>
+                Time: ${new Date(order.timestamp).toLocaleString()} <br>
+              </div>
+            `;
+          });
+        } else {
+          html = "<p>No orders yet.</p>";
+        }
+        document.getElementById("ordersList").innerHTML = html;
+      });
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        alert("Logged out.");
+        window.location.href = "login.html";
+      });
+    }
+    function updateStatus(orderId, status) {
+  firebase.database().ref("orders/" + orderId).update({ status })
+    .then(() => console.log("Status updated"))
+    .catch(err => alert("Error: " + err.message));
+}
+  </script>
+</body>
+</html>

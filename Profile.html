@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Your Profile - Yummy Food</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>User Profile</h2>
+  <div id="userInfo"></div>
+  <h3>Your Orders</h3>
+  <div id="userOrders">Loading...</div>
+
+  <button onclick="logout()">Logout</button>
+
+  <script>
+    firebase.auth().onAuthStateChanged(user => {
+      if (!user) return (window.location.href = "login.html");
+
+      document.getElementById("userInfo").innerHTML = `
+        <p><strong>Email:</strong> ${user.email}</p>
+        <p><strong>UID:</strong> ${user.uid}</p>
+      `;
+
+      const ordersRef = firebase.database().ref("orders");
+      ordersRef.orderByChild("userId").equalTo(user.uid).on("value", snapshot => {
+        const data = snapshot.val();
+        let html = "";
+
+        if (data) {
+          Object.values(data).forEach(order => {
+            html += `
+              <div style="margin:10px; padding:10px; border:1px solid #ccc;">
+                <strong>${order.foodItem}</strong> x${order.quantity}<br>
+                Address: ${order.address}<br>
+                Status: <strong>${order.status || 'Pending'}</strong><br>
+                Date: ${new Date(order.timestamp).toLocaleString()}
+              </div>
+            `;
+          });
+        } else {
+          html = "<p>You have no orders yet.</p>";
+        }
+
+        document.getElementById("userOrders").innerHTML = html;
+      });
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => window.location.href = "login.html");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Food - Yummy Food</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h2>Place Your Order</h2>
+
+  <form id="orderForm">
+    <input type="text" id="foodItem" placeholder="Food Item (e.g., Pizza)" required><br><br>
+    <input type="number" id="quantity" placeholder="Quantity" required><br><br>
+    <input type="text" id="address" placeholder="Delivery Address" required><br><br>
+    <button type="submit">Submit Order</button>
+  </form>
+
+  <br>
+  <button onclick="logout()">Logout</button>
+
+  <script>
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (!user) {
+        alert("Please login first.");
+        window.location.href = "login.html";
+      }
+    });
+
+    document.getElementById("orderForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const user = firebase.auth().currentUser;
+      const foodItem = document.getElementById("foodItem").value;
+      const quantity = document.getElementById("quantity").value;
+      const address = document.getElementById("address").value;
+
+      const orderData = {
+        userId: user.uid,
+        email: user.email,
+        foodItem,
+        quantity,
+        address,
+        timestamp: new Date().toISOString()
+      };
+
+      firebase.database().ref("orders").push(orderData)
+        .then(() => {
+          alert("Order placed successfully!");
+          document.getElementById("orderForm").reset();
+        })
+        .catch(error => {
+          alert("Error: " + error.message);
+        });
+    });
+
+    function logout() {
+      firebase.auth().signOut().then(() => {
+        alert("Logged out.");
+        window.location.href = "login.html";
+      });
+    }
+  </script>
+</body>
+</html>

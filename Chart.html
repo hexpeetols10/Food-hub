@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Orders Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    canvas {
+      max-width: 100%;
+      margin-top: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 Live Order Analytics</h2>
+  <canvas id="foodChart" width="400" height="300"></canvas>
+
+  <script>
+    const ctx = document.getElementById('foodChart').getContext('2d');
+    let chart;
+
+    const foodCount = {};
+
+    function renderChart(dataLabels, dataCounts) {
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: dataLabels,
+          datasets: [{
+            label: 'Number of Orders',
+            data: dataCounts,
+            backgroundColor: 'tomato',
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: 'Popular Food Items'
+            }
+          }
+        }
+      });
+    }
+
+    firebase.database().ref("orders").on("value", snapshot => {
+      const orders = snapshot.val();
+      Object.keys(foodCount).forEach(k => delete foodCount[k]); // clear previous
+
+      if (orders) {
+        Object.values(orders).forEach(order => {
+          const item = order.foodItem;
+          foodCount[item] = (foodCount[item] || 0) + 1;
+        });
+      }
+
+      const labels = Object.keys(foodCount);
+      const counts = Object.values(foodCount);
+      renderChart(labels, counts);
+    });
+  </script>
+</body>
+</html>
